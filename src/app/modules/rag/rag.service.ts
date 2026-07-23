@@ -1,51 +1,12 @@
-import OpenAI from 'openai';
 import { QdrantClient } from '@qdrant/js-client-rest';
 import config from '../../../config';
-import fs from 'fs';
-import path from 'path';
-const { PDFParse } = require('pdf-parse');
-
-const openai = new OpenAI({
-  baseURL: 'https://openrouter.ai/api/v1',
-  apiKey: config.openai.api_key as string,
-});
-
+import { chunkText, createEmbedding, extractTextFromPDF, openai } from './rag.util';
+import { v4 as uuidv4 } from 'uuid';
 const qdrant = new QdrantClient({
   url: config.qdrant.url,
   apiKey: config.qdrant.api_key,
 });
 
-// Helper function to split text into chunks
-const chunkText = (text: string, chunkSize = 1000, overlap = 200) => {
-  const chunks = [];
-  let i = 0;
-  while (i < text.length) {
-    chunks.push(text.slice(i, i + chunkSize));
-    i += chunkSize - overlap;
-  }
-  return chunks;
-};
-
-// Extract text from PDF
-const extractTextFromPDF = async (filePath: string) => {
-  const absolutePath = path.join(process.cwd(), 'uploads', filePath);
-  const dataBuffer = fs.readFileSync(absolutePath);
-  const parser = new PDFParse({ data: dataBuffer });
-
-  const result = await parser.getText();
-  console.log(result.text);
-  return result.text;
-};
-
-// Create embedding for a single text string
-const createEmbedding = async (text: string) => {
-  const response = await openai.embeddings.create({
-    model: 'text-embedding-3-small',
-    input: text,
-  });
-  return response.data[0].embedding;
-  // example embedding like: [0.1, 0.2, 0.3, ...]
-};
 
 // Process and save PDF document
 const processAndSavePDF = async (filePath: string) => {
@@ -60,7 +21,7 @@ const processAndSavePDF = async (filePath: string) => {
   for (let i = 0; i < chunks.length; i++) {
     const embedding = await createEmbedding(chunks[i]);
     points.push({
-      id: `${Date.now()}-${i}`,
+      id: uuidv4(),
       vector: embedding,
       payload: {
         filePath,
@@ -70,7 +31,7 @@ const processAndSavePDF = async (filePath: string) => {
     });
   }
 
-  // 4. Ensure collection exists in Qdrant
+  // 4. Ensure collection exists in Qdrant (if not, create it)
   try {
     await qdrant.getCollection('docs');
   } catch (error) {
@@ -98,46 +59,46 @@ const processAndSavePDF = async (filePath: string) => {
 
 // Query the vector database and get answer
 const queryRAG = async (question: string) => {
-  // 1. Create embedding for question
+  //Step 1: Create embedding for question
   const questionEmbedding = await createEmbedding(question);
-  const collections = await qdrant.getCollections();
-  console.log(collections);
+  // const collections = await qdrant.getCollections();
+  // console.log(collections);
 
-  // 2. Search Qdrant for similar chunks
+  //Step 2: Search Qdrant for similar chunks
   const searchResult = await qdrant.search('docs', {
     vector: questionEmbedding,
     limit: 3, // Get top 3 relevant chunks
   });
   console.log(questionEmbedding);
 
-  // 3. Combine retrieved chunks as context
+  //Step 3: Combine retrieved chunks as context
   const context = searchResult
     .map((result: any) => result.payload.text)
     .join('\n'); // example context like: 'Chunk 1:\nChunk 2:\nChunk 3:'
 
-  // 4. Ask LLM using the context
+  //Step 4: Ask LLM using the context
   const completion = await openai.chat.completions.create({
     model: 'openai/gpt-4o',
     messages: [
       {
         role: 'system',
-        content: `Answer the question only based on the following context. If you don't know the answer, just say you don't know. Don't try to make up an answer.
+        content: `Answer the question in Bangla based on the following context. If you don't know the answer, just say you don't know. Don't try to make up an answer.
         
 Context:
 ${context}`,
       },
       { role: 'user', content: question },
     ],
-    temperature: 0,
+    temperature: 0.5,
     max_tokens: 1000,
   });
 
   return {
     answer: completion.choices[0].message.content,
-    sources: searchResult.map((result: any) => ({
-      text: result.payload.text,
-      score: result.score,
-    })),
+    // sources: searchResult.map((result: any) => ({
+    //   text: result.payload.text,
+    //   score: result.score,
+    // })),
   };
 };
 

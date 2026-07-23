@@ -4,22 +4,17 @@ import catchAsync from '../../../shared/catchAsync';
 import sendResponse from '../../../shared/sendResponse';
 import { RAGService } from './rag.service';
 import { getSingleFilePath } from '../../../shared/getFilePath';
+import path from 'path';
 
 // Upload and process PDF
 const uploadPDF = catchAsync(async (req: Request, res: Response) => {
   const filePath = getSingleFilePath(req.files, 'doc') || '';
-  console.log(req.files);
-  if (!filePath) {
-    sendResponse(res, {
-      success: false,
-      statusCode: StatusCodes.BAD_REQUEST,
-      message: 'No PDF file provided',
-      data: null,
-    });
-    return;
-  }
+  console.log('filePath', filePath);
 
-  const result = await RAGService.processAndSavePDF(filePath);
+  const relativePath = path.join('uploads', filePath);
+  console.log('relativePath', relativePath);
+
+  const result = await RAGService.processAndSavePDF(relativePath);
 
   sendResponse(res, {
     success: true,
