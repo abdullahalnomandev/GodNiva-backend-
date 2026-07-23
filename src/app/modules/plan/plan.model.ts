@@ -22,6 +22,7 @@ const placeOptionSchema = new Schema({
   latitude: { type: Number },
   longitude: { type: Number },
   votes: { type: Number, default: 0 },
+  subtitle: { type: String },
 });
 
 const planSchema = new Schema<IPlan, PlanModel>(
@@ -106,6 +107,9 @@ const planSchema = new Schema<IPlan, PlanModel>(
       type: String,
     },
     placeOptions: [placeOptionSchema],
+    place_images: {
+      type: [String],
+    },
   },
   { timestamps: true },
 );

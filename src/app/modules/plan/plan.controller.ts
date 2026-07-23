@@ -8,12 +8,16 @@ import { getMultipleFilesPath, getSingleFilePath } from '../../../shared/getFile
 const createPlan = catchAsync(async (req: Request, res: Response) => {
   // req.body.creator = req.user.id;
   const image = getSingleFilePath(req.files,"image");
-  const cover_image = getMultipleFilesPath(req.files,"cover_image");
+  const cover_image = getSingleFilePath(req.files,"cover_image");
+  const place_images = getMultipleFilesPath(req.files,"place_images");
   if(image){
     req.body.image = image;
   }
   if(cover_image){
     req.body.cover_image = cover_image;
+  }
+  if(place_images){
+    req.body.place_images = place_images;
   }
   
   const result = await PlanService.createPlan(req.body);
@@ -21,18 +25,20 @@ const createPlan = catchAsync(async (req: Request, res: Response) => {
     success: true,
     statusCode: StatusCodes.CREATED,
     message: 'Plan created successfully',
-    data: result,
+    data: result
   });
 });
 
 const getAllPlans = catchAsync(async (req: Request, res: Response) => {
-  const result = await PlanService.getAllPlans();
+  const user = req.user;
+  const result = await PlanService.getAllPlans(req.query, user);
   
   sendResponse(res, {
     success: true,
     statusCode: StatusCodes.OK,
     message: 'All plans retrieved successfully',
-    data: result,
+    data: result.data,
+    pagination: result.pagination,
   });
 });
 
@@ -44,7 +50,7 @@ const getSinglePlan = catchAsync(async (req: Request, res: Response) => {
     success: true,
     statusCode: StatusCodes.OK,
     message: 'Plan retrieved successfully',
-    data: result,
+    data: result
   });
 });
 
@@ -56,7 +62,7 @@ const updatePlan = catchAsync(async (req: Request, res: Response) => {
     success: true,
     statusCode: StatusCodes.OK,
     message: 'Plan updated successfully',
-    data: result,
+    data: result
   });
 });
 
@@ -68,7 +74,7 @@ const deletePlan = catchAsync(async (req: Request, res: Response) => {
     success: true,
     statusCode: StatusCodes.OK,
     message: 'Plan deleted successfully',
-    data: result,
+    data: result
   });
 });
 
@@ -77,5 +83,5 @@ export const PlanController = {
   getAllPlans,
   getSinglePlan,
   updatePlan,
-  deletePlan,
+  deletePlan
 };

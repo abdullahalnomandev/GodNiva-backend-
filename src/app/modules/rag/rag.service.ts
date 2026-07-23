@@ -32,8 +32,8 @@ const extractTextFromPDF = async (filePath: string) => {
   const dataBuffer = fs.readFileSync(absolutePath);
   const parser = new PDFParse({ data: dataBuffer });
 
-	const result = await parser.getText();
-	console.log(result.text);
+  const result = await parser.getText();
+  console.log(result.text);
   return result.text;
 };
 
@@ -100,13 +100,15 @@ const processAndSavePDF = async (filePath: string) => {
 const queryRAG = async (question: string) => {
   // 1. Create embedding for question
   const questionEmbedding = await createEmbedding(question);
-  // const collections = await qdrant.getCollections();
+  const collections = await qdrant.getCollections();
+  console.log(collections);
 
   // 2. Search Qdrant for similar chunks
   const searchResult = await qdrant.search('docs', {
     vector: questionEmbedding,
     limit: 3, // Get top 3 relevant chunks
   });
+  console.log(questionEmbedding);
 
   // 3. Combine retrieved chunks as context
   const context = searchResult

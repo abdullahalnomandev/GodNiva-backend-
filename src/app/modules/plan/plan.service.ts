@@ -2,15 +2,28 @@ import { StatusCodes } from 'http-status-codes';
 import { Plan } from './plan.model';
 import { IPlan } from './plan.interface';
 import ApiError from '../../../errors/ApiError';
+import QueryBuilder from '../../builder/QueryBuilder';
 
 const createPlan = async (payload: IPlan) => {
   const result = await Plan.create(payload);
   return result;
 };
 
-const getAllPlans = async () => {
-  const result = await Plan.find().populate('creator', 'name email');
-  return result;
+const getAllPlans = async (query: any, user: any) => {
+  const baseQuery = Plan.find();
+   const planQuery = new QueryBuilder(baseQuery, query)
+    .paginate()
+    .fields()
+    .sort();
+
+  const result = await planQuery.modelQuery.lean();
+  const pagination = await planQuery.getPaginationInfo();
+
+  return {
+    pagination,
+    data: result,
+  };
+
 };
 
 const getSinglePlan = async (id: string) => {

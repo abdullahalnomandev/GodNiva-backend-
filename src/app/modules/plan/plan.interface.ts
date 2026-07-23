@@ -22,7 +22,7 @@ export type IPlaceOption = {
   image?: string;
   latitude?: number;
   longitude?: number;
-  value: string;
+  subtitle: string;
   votes?: number;
 };
 
@@ -54,6 +54,7 @@ export type IPlan = {
   // voting place
   place?: string;
   placeOptions?: IPlaceOption[];
+  place_images?: string[];
 };
 
 export type PlanModel = Model<IPlan>;

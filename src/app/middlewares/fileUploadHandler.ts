@@ -30,6 +30,9 @@ const fileUploadHandler = () => {
         case 'cover_image':
           uploadDir = path.join(baseUploadDir, 'cover_image');
           break;
+        case 'place_images':
+          uploadDir = path.join(baseUploadDir, 'place_images');
+          break;
         case 'media':
           uploadDir = path.join(baseUploadDir, 'media');
           break;
@@ -62,7 +65,7 @@ const fileUploadHandler = () => {
 
   //file filter
   const filterFilter = (req: Request, file: any, cb: FileFilterCallback) => {
-    if (file.fieldname === 'image' || file.fieldname === 'cover_image') {
+    if (file.fieldname === 'image' || file.fieldname === 'cover_image' || file.fieldname === 'place_images') {
       if (
         file.mimetype === 'image/jpeg' ||
         file.mimetype === 'image/png' ||
@@ -108,6 +111,7 @@ const fileUploadHandler = () => {
   }).fields([
     { name: 'image', maxCount: 3 },
     { name: 'cover_image', maxCount: 3 },
+    { name: 'place_images', maxCount: 5 },
     { name: 'media', maxCount: 3 },
     { name: 'audio', maxCount: 3 },
     { name: 'doc', maxCount: 3 },
